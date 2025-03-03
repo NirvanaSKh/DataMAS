@@ -1,7 +1,17 @@
+import os
 import streamlit as st
 import psycopg2
 import pandas as pd
 import logging
+import spacy
+
+# Ensure spaCy model is downloaded
+os.system("python -m spacy download en_core_web_md")
+
+# Load the NLP model
+nlp = spacy.load("en_core_web_md")
+
+# Import agents
 from config.db_config import get_db_connection
 from agents.query_analysis import detect_intent
 from agents.data_query import query_database
@@ -15,7 +25,7 @@ from utils.memory import get_chat_memory, update_chat_memory
 logging.basicConfig(filename="logs/error.log", level=logging.ERROR)
 
 # Initialize Streamlit UI
-st.title("Multi-Agent Chatbot with Memory")
+st.title("Multi-Agent Chatbot with NLP Memory")
 
 # Load chat memory
 chat_memory = get_chat_memory()
