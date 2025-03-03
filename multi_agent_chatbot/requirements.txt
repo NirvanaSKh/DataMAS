@@ -5,3 +5,4 @@ matplotlib
 fuzzywuzzy
 scikit-learn
 spacy
+spacy[en_core_web_md]
