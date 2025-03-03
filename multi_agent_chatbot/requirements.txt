@@ -1,0 +1,6 @@
+streamlit
+psycopg2
+pandas
+matplotlib
+fuzzywuzzy
+scikit-learn
