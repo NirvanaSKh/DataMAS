@@ -1,11 +1,10 @@
-import os
 import streamlit as st
 import psycopg2
 import pandas as pd
 import logging
 import spacy
 
-# Load the pre-installed NLP model
+# Load the pre-installed NLP model (make sure it's installed via requirements.txt)
 nlp = spacy.load("en_core_web_md")
 
 # Import agents
