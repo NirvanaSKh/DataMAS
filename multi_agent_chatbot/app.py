@@ -1,77 +1,83 @@
-import os
 import streamlit as st
-import psycopg2
-import pandas as pd
-import logging
 import spacy
-
-# Define the local model path
-MODEL_PATH = "multi_agent_chatbot/models/en_core_web_md"
-
-# Load spaCy model from local directory
-try:
-    nlp = spacy.load(MODEL_PATH)
-except OSError:
-    st.error("spaCy model not found! Please ensure en_core_web_md is stored locally.")
-    raise SystemExit("Critical Error: spaCy model is missing.")
-
-# Import agents
-from config.db_config import get_db_connection
+import os
+import pandas as pd
+import json
 from agents.query_analysis import detect_intent
 from agents.data_query import query_database
 from agents.data_analysis import analyze_data
-from agents.graph_rules import select_graph_type
+from agents.graph_rules import determine_graph_type
 from agents.build_table import build_table
-from agents.build_graph import generate_graph
-from utils.memory import get_chat_memory, update_chat_memory
+from agents.build_graph import build_graph
+from utils.memory import ChatMemory
 
-# Configure logging
-logging.basicConfig(filename="logs/error.log", level=logging.ERROR)
+# ✅ Define the correct model path
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models/en_core_web_md")
 
-# Initialize Streamlit UI
-st.title("Multi-Agent Chatbot with NLP Memory")
+# ✅ Load spaCy model from the correct directory
+try:
+    nlp = spacy.load(MODEL_PATH)
+except OSError:
+    st.warning("spaCy model not found! Downloading...")
+    import spacy.cli
+    spacy.cli.download("en_core_web_md")
+    nlp = spacy.load("en_core_web_md")
 
-# Load chat memory
-chat_memory = get_chat_memory()
+# ✅ Initialize chat memory
+memory = ChatMemory()
 
-# User Input
-user_query = st.text_input("Ask me something about the database:")
+# ✅ Streamlit UI
+st.title("💬 Multi-Agent AI Chatbot")
 
-if user_query:
-    try:
-        # Update chat memory
-        previous_queries = chat_memory.get("history", [])
-        previous_queries.append(user_query)
-        update_chat_memory(previous_queries)
+# ✅ Chat history display
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-        # Step 1: Detect Intent
-        intent = detect_intent(user_query)
+for message in st.session_state.chat_history:
+    st.write(message)
 
-        if not intent:
-            st.write("I'm not sure what you're asking. Could you clarify?")
-        else:
-            # Step 2: Query Database
-            query_result = query_database(intent)
+# ✅ User input
+user_input = st.text_input("Ask a question:")
 
-            if query_result is None:
-                st.write("I couldn't find relevant data. Can you rephrase?")
-            else:
-                # Step 3: Analyze Data
-                data_type = analyze_data(query_result)
+if user_input:
+    # ✅ Store user query in memory
+    memory.store_query(user_input)
 
-                # Step 4: Determine Graph Type
-                graph_type = select_graph_type(data_type)
+    # ✅ Determine user intent
+    intent = detect_intent(user_input, nlp)
 
-                # Step 5: Build Table
-                table = build_table(query_result)
-                st.write("### Data Table")
-                st.write(table)
+    # ✅ Handle different intents
+    if intent == "database_query":
+        query_result = query_database(user_input)
+        data_analysis = analyze_data(query_result)
+        
+        # ✅ Display a table if structured data is detected
+        if isinstance(query_result, pd.DataFrame):
+            st.write("### 📊 Query Results")
+            st.dataframe(query_result)
+        
+        # ✅ Determine graph type
+        graph_type = determine_graph_type(data_analysis)
 
-                # Step 6: Generate Graph
-                if graph_type:
-                    st.write("### Visualization")
-                    generate_graph(query_result, graph_type)
+        # ✅ Generate graph if applicable
+        if graph_type:
+            st.write("### 📈 Generated Graph")
+            fig = build_graph(query_result, graph_type)
+            st.pyplot(fig)
+    
+    elif intent == "chat_memory":
+        previous_queries = memory.retrieve_queries()
+        st.write("### 🔍 Previous Questions")
+        st.write(previous_queries)
 
-    except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        st.write("Oops! Something went wrong. Please try again.")
+    else:
+        st.write("🤖 Sorry, I didn’t understand that. Please try again.")
+
+    # ✅ Save response to chat history
+    st.session_state.chat_history.append(f"**You:** {user_input}")
+    st.session_state.chat_history.append(f"**Bot:** {intent}")
+
+# ✅ Button to clear chat history
+if st.button("Clear Chat"):
+    st.session_state.chat_history = []
+    st.write("Chat cleared!")
