@@ -4,15 +4,16 @@ import psycopg2
 import pandas as pd
 import logging
 import spacy
-import spacy.cli
 
-# Ensure spaCy model is downloaded at runtime
+# Define the local model path
+MODEL_PATH = "multi_agent_chatbot/models/en_core_web_md"
+
+# Load spaCy model from local directory
 try:
-    nlp = spacy.load("en_core_web_md")
+    nlp = spacy.load(MODEL_PATH)
 except OSError:
-    st.warning("Downloading 'en_core_web_md' model. This may take a moment...")
-    spacy.cli.download("en_core_web_md")
-    nlp = spacy.load("en_core_web_md")
+    st.error("spaCy model not found! Please ensure en_core_web_md is stored locally.")
+    raise SystemExit("Critical Error: spaCy model is missing.")
 
 # Import agents
 from config.db_config import get_db_connection
