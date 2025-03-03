@@ -5,4 +5,4 @@ psycopg2-binary
 scikit-learn
 spacy
 spacy-lookups-data
-git+https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.6.0/en_core_web_md-3.6.0.tar.gz
+
