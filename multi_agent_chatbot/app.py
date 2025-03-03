@@ -4,12 +4,15 @@ import psycopg2
 import pandas as pd
 import logging
 import spacy
+import spacy.cli
 
 # Ensure spaCy model is downloaded
-os.system("python -m spacy download en_core_web_md")
-
-# Load the NLP model
-nlp = spacy.load("en_core_web_md")
+try:
+    nlp = spacy.load("en_core_web_md")
+except OSError:
+    st.warning("Downloading 'en_core_web_md' model. This may take a moment...")
+    spacy.cli.download("en_core_web_md")
+    nlp = spacy.load("en_core_web_md")  # Load after downloading
 
 # Import agents
 from config.db_config import get_db_connection
