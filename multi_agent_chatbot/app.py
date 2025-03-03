@@ -18,10 +18,12 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), "models/en_core_web_md")
 try:
     nlp = spacy.load(MODEL_PATH)
 except OSError:
-    st.warning("spaCy model not found! Downloading...")
+    st.warning("spaCy model not found! Trying to download...")
     import spacy.cli
     spacy.cli.download("en_core_web_md")
     nlp = spacy.load("en_core_web_md")
+
+st.write("✅ spaCy Model Loaded Successfully!")
 
 # ✅ Initialize chat memory
 memory = ChatMemory()
